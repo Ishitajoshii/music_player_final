@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
 import 'music_player_screen.dart';
+import 'liked_songs_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,12 +28,22 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool _isPlaylistsExpanded = false;
+
+  final List<Map<String, String>> _songs = [
+    {'title': 'The Secret', 'path': 'The_Secret_-_Anna_Craig.mp3'},
+    {'title': 'Chocolate', 'path': 'Chocolate_-_Alfonso_Lugo.mp3'},
+    {'title': 'Alone', 'path': 'Alone_-_Color_Out.mp3'},
+  ];
+
   final List<String> _playlists = [
-    'Liked Songs', 'Chill Mix', 'Workout Beats',
+    'Liked Songs',
+    'Chill Mix', 'Workout Beats',
     'Focus Flow', 'Road Trip Anthems', '80s Classics',
   ];
+
   int _currentIndex = 0;
   final _searchController = TextEditingController();
+  Set<int> _likedSongIndices = {};
 
   @override
   void dispose() {
@@ -40,37 +51,33 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  void _onBottomNavTapped(int index) {
+  void _onBottomNavTapped(int index) async {
     switch (index) {
       case 0:
-        if (_currentIndex != 0) {
-          setState(() {
-            _currentIndex = 0;
-            _isPlaylistsExpanded = false;
-            _searchController.clear();
-            FocusScope.of(context).unfocus();
-          });
-        } else {
-           setState(() {
-             _isPlaylistsExpanded = false;
-             _searchController.clear();
-             FocusScope.of(context).unfocus();
-           });
-        }
+         if (_currentIndex != 0) {
+           setState(() { _currentIndex = 0; _isPlaylistsExpanded = false; _searchController.clear(); FocusScope.of(context).unfocus(); });
+         } else {
+           setState(() { _isPlaylistsExpanded = false; _searchController.clear(); FocusScope.of(context).unfocus(); });
+         }
         break;
-
       case 1:
-        setState(() { _currentIndex = index; });
-        ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Type in the search bar and press Enter/Submit.')),
-        );
+         setState(() { _currentIndex = index; });
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Type in the search bar and press Enter/Submit.')));
         break;
-
       case 2:
-        Navigator.push(
+        final Set<int>? returnedLikedSongs = await Navigator.push<Set<int>>(
           context,
-          MaterialPageRoute(builder: (context) => const MusicPlayerScreen()),
+          MaterialPageRoute(builder: (context) => MusicPlayerScreen(
+            initialLikedSongs: _likedSongIndices,
+            allSongs: _songs,
+          )),
         );
+
+        if (returnedLikedSongs != null && mounted) {
+          setState(() {
+            _likedSongIndices = returnedLikedSongs;
+          });
+        }
         break;
     }
   }
@@ -83,7 +90,6 @@ class _MyHomePageState extends State<MyHomePage> {
       );
       return;
     }
-
     String? foundPlaylist;
     for (var playlist in _playlists) {
       if (playlist.toLowerCase() == searchTerm) {
@@ -91,9 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       }
     }
-
     FocusScope.of(context).unfocus();
-
     if (foundPlaylist != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Playlist found: $foundPlaylist')),
@@ -111,7 +115,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     const whiteTextStyle = TextStyle(color: Colors.white, fontSize: 18);
-
     return Scaffold(
       backgroundColor: Colors.blue[800],
       body: SafeArea(
@@ -140,18 +143,15 @@ class _MyHomePageState extends State<MyHomePage> {
                          );
                        },
                        child: Container(
-                         height: 60,
-                         width: 60,
+                         height: 60, width: 60,
                          decoration: const BoxDecoration(
-                           color: Colors.white,
-                           shape: BoxShape.circle,
+                           color: Colors.white, shape: BoxShape.circle,
                          ),
                        ),
                      ),
                    ],
                  ),
               ),
-
               GestureDetector(
                 onTap: () {
                   setState(() { _isPlaylistsExpanded = !_isPlaylistsExpanded; });
@@ -165,14 +165,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       const SizedBox(width: 8),
                       Icon(
                         _isPlaylistsExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                        color: Colors.white,
-                        size: 30,
+                        color: Colors.white, size: 30,
                       ),
                     ],
                   ),
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.only(top: 5.0, bottom: 15.0),
                 child: TextField(
@@ -196,7 +194,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   textInputAction: TextInputAction.search,
                 ),
               ),
-
               Expanded(
                 child: Visibility(
                   visible: _isPlaylistsExpanded,
@@ -206,10 +203,30 @@ class _MyHomePageState extends State<MyHomePage> {
                     itemBuilder: (context, index) {
                       final playlistName = _playlists[index];
                       return ListTile(
-                        leading: const Icon(Icons.music_note, color: Colors.white),
+                        leading: Icon(
+                          playlistName == 'Liked Songs' ? Icons.favorite : Icons.music_note,
+                          color: Colors.white
+                        ),
                         title: Text(playlistName, style: const TextStyle(color: Colors.white)),
                         onTap: () {
+                           // *** This is the corrected onTap logic ***
                            print('Tapped on playlist: $playlistName');
+                           if (playlistName == 'Liked Songs') {
+                             Navigator.push(
+                               context,
+                               MaterialPageRoute(builder: (context) => LikedSongsScreen(
+                                 likedIndices: _likedSongIndices,
+                                 allSongs: _songs,
+                               )),
+                             );
+                           } else {
+                             // Placeholder for other playlist actions
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(content: Text('Playlist "$playlistName" not implemented yet.'))
+                             );
+                             // FUTURE: Navigate to a screen showing songs for 'playlistName'
+                           }
+                           // *** End of corrected onTap logic ***
                           },
                       );
                     },
@@ -220,7 +237,6 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onBottomNavTapped,
