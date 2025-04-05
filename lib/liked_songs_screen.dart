@@ -46,12 +46,7 @@ class LikedSongsScreen extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.music_note, color: Colors.white),
                   title: Text(title, style: const TextStyle(color: Colors.white)),
-                  onTap: () {
-                    print('Tapped on liked song: $title');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                       SnackBar(content: Text('Playing "$title" not implemented yet.'))
-                     );
-                  },
+                
                 );
               },
             ),
