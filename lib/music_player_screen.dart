@@ -206,7 +206,18 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                 icon: Icon(isShuffle ? Icons.shuffle_on : Icons.shuffle,
                     color: isShuffle ? Colors.lightBlueAccent : Colors.white),
                 tooltip: 'Shuffle',
-                onPressed: () => setState(() => isShuffle = !isShuffle)),
+                onPressed: (){
+                  setState((){
+                    isShuffle = !isShuffle;
+                    _queue = List<int>.generate(_songs.length, (i) => i)
+                      ..remove(currentSongIndex);
+                    if (isShuffle) {
+                      _queue.shuffle();
+                    }
+                  });
+                },
+              ),
+            
             IconButton(
                 icon: Icon(isRepeat ? Icons.repeat_one_on : Icons.repeat,
                     color: isRepeat ? Colors.lightBlueAccent : Colors.white),
