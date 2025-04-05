@@ -4,7 +4,7 @@ class LikedSongsScreen extends StatelessWidget {
   final Set<int> likedIndices;
   final List<Map<String, String>> allSongs;
 
-  const LikedSongsScreen({
+  LikedSongsScreen({
     Key? key,
     required this.likedIndices,
     required this.allSongs,
